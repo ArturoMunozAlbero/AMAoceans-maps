@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Japan Assessment Areas Example - AMAoceans</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/jpn_faj_areas_1.js"></script>
+        <script src="data/hotosm_jpn_sea_ports_points_shp_2.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[7.4925792039610215,90.0],[56.81725452863635,184.5]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var title = new L.Control({'position':'topright'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+        title.update = function () {
+            this._div.innerHTML = '<h2>Japan Assessment Areas Example - AMAoceans</h2>';
+        };
+        title.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_GoogleSatellite_0');
+        map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
+        var layer_GoogleSatellite_0 = L.tileLayer('http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 18
+        });
+        layer_GoogleSatellite_0;
+        map.addLayer(layer_GoogleSatellite_0);
+        function pop_jpn_faj_areas_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(feature.properties['fid'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_geo'] !== null ? autolinker.link(feature.properties['System_geo'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Owner_name'] !== null ? autolinker.link(feature.properties['Owner_name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Owner_code'] !== null ? autolinker.link(feature.properties['Owner_code'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Owner_co_1'] !== null ? autolinker.link(feature.properties['Owner_co_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Owner_mult'] !== null ? autolinker.link(feature.properties['Owner_mult'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_nam'] !== null ? autolinker.link(feature.properties['System_nam'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_cod'] !== null ? autolinker.link(feature.properties['System_cod'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_c_1'] !== null ? autolinker.link(feature.properties['System_c_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_mul'] !== null ? autolinker.link(feature.properties['System_mul'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_sou'] !== null ? autolinker.link(feature.properties['System_sou'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_s_1'] !== null ? autolinker.link(feature.properties['System_s_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_sha'] !== null ? autolinker.link(feature.properties['System_sha'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_lic'] !== null ? autolinker.link(feature.properties['System_lic'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_lin'] !== null ? autolinker.link(feature.properties['System_lin'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_cat'] !== null ? autolinker.link(feature.properties['System_cat'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Created_by'] !== null ? autolinker.link(feature.properties['Created_by'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Created_on'] !== null ? autolinker.link(feature.properties['Created_on'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Area_syste'] !== null ? autolinker.link(feature.properties['Area_syste'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Area_descr'] !== null ? autolinker.link(feature.properties['Area_descr'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Area_code_'] !== null ? autolinker.link(feature.properties['Area_code_'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_typ'] !== null ? autolinker.link(feature.properties['System_typ'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_ASF'] !== null ? autolinker.link(feature.properties['System_ASF'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_spe'] !== null ? autolinker.link(feature.properties['System_spe'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Area_sys_1'] !== null ? autolinker.link(feature.properties['Area_sys_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Owner_na_1'] !== null ? autolinker.link(feature.properties['Owner_na_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Owner_co_2'] !== null ? autolinker.link(feature.properties['Owner_co_2'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Owner_coun'] !== null ? autolinker.link(feature.properties['Owner_coun'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_n_1'] !== null ? autolinker.link(feature.properties['System_n_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_c_2'] !== null ? autolinker.link(feature.properties['System_c_2'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['System_com'] !== null ? autolinker.link(feature.properties['System_com'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Area code</th>\
+                        <td>' + (feature.properties['area_code'] !== null ? autolinker.link(feature.properties['area_code'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Area name</th>\
+                        <td>' + (feature.properties['stocklong'] !== null ? autolinker.link(feature.properties['stocklong'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_jpn_faj_areas_1_0() {
+            return {
+                pane: 'pane_jpn_faj_areas_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,1,14,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_jpn_faj_areas_1');
+        map.getPane('pane_jpn_faj_areas_1').style.zIndex = 401;
+        map.getPane('pane_jpn_faj_areas_1').style['mix-blend-mode'] = 'normal';
+        var layer_jpn_faj_areas_1 = new L.geoJson(json_jpn_faj_areas_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_jpn_faj_areas_1',
+            layerName: 'layer_jpn_faj_areas_1',
+            pane: 'pane_jpn_faj_areas_1',
+            onEachFeature: pop_jpn_faj_areas_1,
+            style: style_jpn_faj_areas_1_0,
+        });
+        bounds_group.addLayer(layer_jpn_faj_areas_1);
+        map.addLayer(layer_jpn_faj_areas_1);
+        function pop_hotosm_jpn_sea_ports_points_shp_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">name</th>\
+                        <td>' + (feature.properties['name'] !== null ? autolinker.link(feature.properties['name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">name_en</th>\
+                        <td>' + (feature.properties['name_en'] !== null ? autolinker.link(feature.properties['name_en'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['amenity'] !== null ? autolinker.link(feature.properties['amenity'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building'] !== null ? autolinker.link(feature.properties['building'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['port'] !== null ? autolinker.link(feature.properties['port'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['operator_t'] !== null ? autolinker.link(feature.properties['operator_t'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr_full'] !== null ? autolinker.link(feature.properties['addr_full'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr_city'] !== null ? autolinker.link(feature.properties['addr_city'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source'] !== null ? autolinker.link(feature.properties['source'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name_ja'] !== null ? autolinker.link(feature.properties['name_ja'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(feature.properties['osm_id'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_type'] !== null ? autolinker.link(feature.properties['osm_type'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_hotosm_jpn_sea_ports_points_shp_2_0() {
+            return {
+                pane: 'pane_hotosm_jpn_sea_ports_points_shp_2',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(229,182,54,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_hotosm_jpn_sea_ports_points_shp_2');
+        map.getPane('pane_hotosm_jpn_sea_ports_points_shp_2').style.zIndex = 402;
+        map.getPane('pane_hotosm_jpn_sea_ports_points_shp_2').style['mix-blend-mode'] = 'normal';
+        var layer_hotosm_jpn_sea_ports_points_shp_2 = new L.geoJson(json_hotosm_jpn_sea_ports_points_shp_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_hotosm_jpn_sea_ports_points_shp_2',
+            layerName: 'layer_hotosm_jpn_sea_ports_points_shp_2',
+            pane: 'pane_hotosm_jpn_sea_ports_points_shp_2',
+            onEachFeature: pop_hotosm_jpn_sea_ports_points_shp_2,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_hotosm_jpn_sea_ports_points_shp_2_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_hotosm_jpn_sea_ports_points_shp_2);
+        map.addLayer(layer_hotosm_jpn_sea_ports_points_shp_2);
+        var overlaysTree = [
+            {label: '<img src="legend/hotosm_jpn_sea_ports_points_shp_2.png" /> hotosm_jpn_sea_ports_points_shp', layer: layer_hotosm_jpn_sea_ports_points_shp_2},
+            {label: '<img src="legend/jpn_faj_areas_1.png" /> jpn_faj_areas', layer: layer_jpn_faj_areas_1},
+            {label: "Google Satellite", layer: layer_GoogleSatellite_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        map.addControl(new L.Control.Search({
+            layer: layer_jpn_faj_areas_1,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'stocklong'}));
+        document.getElementsByClassName('search-button')[0].className +=
+         ' fa fa-binoculars';
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"stocklong": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_stocklong = document.createElement('div');
+            div_stocklong.id = "div_stocklong";
+            div_stocklong.className= "filterselect";
+            document.getElementById("menu").appendChild(div_stocklong);
+            sel_stocklong = document.createElement('select');
+            sel_stocklong.multiple = true;
+            sel_stocklong.size = 10;
+            sel_stocklong.id = "sel_stocklong";
+            var stocklong_options_str = "<option value='' unselected></option>";
+            sel_stocklong.onchange = function(){filterFunc()};
+            stocklong_options_str  += '<option value="Alaskan Pollock Pacific Coast of Japan">Alaskan Pollock Pacific Coast of Japan</option>';
+            stocklong_options_str  += '<option value="Atka Mackerel Assessment Area">Atka Mackerel Assessment Area</option>';
+            stocklong_options_str  += '<option value="Blue mackerel East China Sea">Blue mackerel East China Sea</option>';
+            stocklong_options_str  += '<option value="Blue mackerel Pacific Coast of Japan">Blue mackerel Pacific Coast of Japan</option>';
+            stocklong_options_str  += '<option value="Bluefin Trevally Assessment Area">Bluefin Trevally Assessment Area</option>';
+            stocklong_options_str  += '<option value="Chub mackerel Pacific Coast of Japan">Chub mackerel Pacific Coast of Japan</option>';
+            stocklong_options_str  += '<option value="Cod in the Hokkaido Sea Assessment Area">Cod in the Hokkaido Sea Assessment Area</option>';
+            stocklong_options_str  += '<option value="Cod in the Honshu Assessment Area">Cod in the Honshu Assessment Area</option>';
+            stocklong_options_str  += '<option value="Cod in the Honshu Sea Assessment Area">Cod in the Honshu Sea Assessment Area</option>';
+            stocklong_options_str  += '<option value="Cod in the Pacific Assessment Area">Cod in the Pacific Assessment Area</option>';
+            stocklong_options_str  += '<option value="Flathead Flounder Assessment Area">Flathead Flounder Assessment Area</option>';
+            stocklong_options_str  += '<option value="Horse Mackerel in Tsushima Assessment Area">Horse Mackerel in Tsushima Assessment Area</option>';
+            stocklong_options_str  += '<option value="Horse Mackerel in the Pacific Assessment Area">Horse Mackerel in the Pacific Assessment Area</option>';
+            stocklong_options_str  += '<option value="Japanese anchovy Inland Sea of Japan">Japanese anchovy Inland Sea of Japan</option>';
+            stocklong_options_str  += '<option value="Japanese anchovy Pacific Coast of Japan">Japanese anchovy Pacific Coast of Japan</option>';
+            stocklong_options_str  += '<option value="Japanese anchovy Tsushima Strait">Japanese anchovy Tsushima Strait</option>';
+            stocklong_options_str  += '<option value="Japanese flying squid Japan Autumn recruitment">Japanese flying squid Japan Autumn recruitment</option>';
+            stocklong_options_str  += '<option value="Japanese flying squid Japan Winter recruitment">Japanese flying squid Japan Winter recruitment</option>';
+            stocklong_options_str  += '<option value="Japanese jack mackerel Pacific Coast of Japan">Japanese jack mackerel Pacific Coast of Japan</option>';
+            stocklong_options_str  += '<option value="Japanese pilchard Pacific Coast of Japan">Japanese pilchard Pacific Coast of Japan</option>';
+            stocklong_options_str  += '<option value="Japanese pilchard Tsushima Strait">Japanese pilchard Tsushima Strait</option>';
+            stocklong_options_str  += '<option value="Kinmedai Assessment Area">Kinmedai Assessment Area</option>';
+            stocklong_options_str  += '<option value="Mackerel in Tsushima Assessment Area">Mackerel in Tsushima Assessment Area</option>';
+            stocklong_options_str  += '<option value="Mackerel in the Pacific Assessment Area">Mackerel in the Pacific Assessment Area</option>';
+            stocklong_options_str  += '<option value="Magalay Assessment Area">Magalay Assessment Area</option>';
+            stocklong_options_str  += '<option value="Maraji Assessment Area">Maraji Assessment Area</option>';
+            stocklong_options_str  += '<option value="Mussel Flounder Assessment Area">Mussel Flounder Assessment Area</option>';
+            stocklong_options_str  += '<option value="Nigis Assessment Area">Nigis Assessment Area</option>';
+            stocklong_options_str  += '<option value="Olive flounder East China Sea">Olive flounder East China Sea</option>';
+            stocklong_options_str  += '<option value="Olive flounder Pacific">Olive flounder Pacific</option>';
+            stocklong_options_str  += '<option value="Olive flounder Sea of Japan North">Olive flounder Sea of Japan North</option>';
+            stocklong_options_str  += '<option value="Pacific saury Northwest Pacific">Pacific saury Northwest Pacific</option>';
+            stocklong_options_str  += '<option value="Red Snow Crab Assessment Area">Red Snow Crab Assessment Area</option>';
+            stocklong_options_str  += '<option value="Red seabream East China Sea">Red seabream East China Sea</option>';
+            stocklong_options_str  += '<option value="Red seabream Inland Sea of Japan (East)">Red seabream Inland Sea of Japan (East)</option>';
+            stocklong_options_str  += '<option value="Red seabream Inland Sea of Japan (West)">Red seabream Inland Sea of Japan (West)</option>';
+            stocklong_options_str  += '<option value="Round Sardine in Tsushima Assessment Area">Round Sardine in Tsushima Assessment Area</option>';
+            stocklong_options_str  += '<option value="Round Sardine in the Pacific Assessment Area">Round Sardine in the Pacific Assessment Area</option>';
+            stocklong_options_str  += '<option value="Round herring Tsushima Strait">Round herring Tsushima Strait</option>';
+            stocklong_options_str  += '<option value="Sailfin sandfish Sea of Japan West">Sailfin sandfish Sea of Japan West</option>';
+            stocklong_options_str  += '<option value="Sand Locust Assessment Area">Sand Locust Assessment Area</option>';
+            stocklong_options_str  += '<option value="Shark Ray Assessment Area">Shark Ray Assessment Area</option>';
+            stocklong_options_str  += '<option value="Snow Crab Assessment Area A">Snow Crab Assessment Area A</option>';
+            stocklong_options_str  += '<option value="Snow Crab Assessment Area B">Snow Crab Assessment Area B</option>';
+            stocklong_options_str  += '<option value="Snow Crab in Hokkaido Assessment Area">Snow Crab in Hokkaido Assessment Area</option>';
+            stocklong_options_str  += '<option value="Snow Crab in Okhostk Assessment Area">Snow Crab in Okhostk Assessment Area</option>';
+            stocklong_options_str  += '<option value="Snow Crab in the North Pacific Assessment Area">Snow Crab in the North Pacific Assessment Area</option>';
+            stocklong_options_str  += '<option value="Souchachi in Hokkaido Assessment Area">Souchachi in Hokkaido Assessment Area</option>';
+            stocklong_options_str  += '<option value="Souhachi in South Sea of Japan Assessment Area">Souhachi in South Sea of Japan Assessment Area</option>';
+            stocklong_options_str  += '<option value="Spanish Mackerel in Seto Assessment Area">Spanish Mackerel in Seto Assessment Area</option>';
+            stocklong_options_str  += '<option value="Spanish Mackerel in the Sea of Japan Assessment Area">Spanish Mackerel in the Sea of Japan Assessment Area</option>';
+            stocklong_options_str  += '<option value="Tiger Puffer in the Ise-Mikawawan system Assessment Area">Tiger Puffer in the Ise-Mikawawan system Assessment Area</option>';
+            stocklong_options_str  += '<option value="Tiger Puffer in the Sea of Japan Assessment Area">Tiger Puffer in the Sea of Japan Assessment Area</option>';
+            stocklong_options_str  += '<option value="Walleye pollock Sea of Japan North">Walleye pollock Sea of Japan North</option>';
+            stocklong_options_str  += '<option value="Willow Flounder Assessment Area">Willow Flounder Assessment Area</option>';
+            stocklong_options_str  += '<option value="Yellow sea bream Sea of Japan">Yellow sea bream Sea of Japan</option>';
+            stocklong_options_str  += '<option value="Yellowtail Assessment Area">Yellowtail Assessment Area</option>';
+            stocklong_options_str  += '<option value="flounder Inland Sea of Japan">flounder Inland Sea of Japan</option>';
+            sel_stocklong.innerHTML = stocklong_options_str;
+            div_stocklong.appendChild(sel_stocklong);
+            var lab_stocklong = document.createElement('div');
+            lab_stocklong.innerHTML = 'stocklong';
+            lab_stocklong.className = 'filterlabel';
+            div_stocklong.appendChild(lab_stocklong);
+            var reset_stocklong = document.createElement('div');
+            reset_stocklong.innerHTML = 'clear filter';
+            reset_stocklong.className = 'filterlabel';
+            reset_stocklong.onclick = function() {
+                var options = document.getElementById("sel_stocklong").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_stocklong.appendChild(reset_stocklong);
+        </script>
+    </body>
+</html>
